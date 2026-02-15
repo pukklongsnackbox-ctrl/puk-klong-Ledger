@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puk-Klong | Cloud Ledger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&family=Kanit:wght@300;500&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; color: #333; }
+        h1, h2, h3, .brand-font { font-family: 'Kanit', sans-serif; }
+        
+        /* Theme Colors */
+        .theme-expense .accent-bg { background-color: #b91c1c; }
+        .theme-expense .accent-text { color: #b91c1c; }
+        .theme-income .accent-bg { background-color: #059669; }
+        .theme-income .accent-text { color: #059669; }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+        
+        /* Scan Overlay Animation */
+        #scan-overlay { display: none; }
+        #scan-overlay.flex { display: flex; }
+        .scan-line { width: 100%; height: 2px; background: #00ff00; position: absolute; top: 0; animation: scanning 2s infinite; box-shadow: 0 0 10px #00ff00; }
+        @keyframes scanning { 0% { top: 0%; opacity: 0; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        
+        /* Toast Notification */
+        #toast-overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        #toast-overlay.show { opacity: 1; pointer-events: auto; }
+
+        /* Print Settings */
+        @media print { .no-print { display: none !important; } .print-only { display: block !important; } body { background: white; -webkit-print-color-adjust: exact; } }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="flex justify-center min-h-screen sm:py-8 transition-colors duration-300 theme-expense" id="main-body">
+
+    <div id="scan-overlay" class="fixed inset-0 z-[60] bg-black/90 flex flex-col items-center justify-center text-white backdrop-blur-sm">
+        <div class="relative w-64 h-64 border-2 border-white/30 rounded-lg overflow-hidden mb-4 bg-black">
+            <div class="absolute inset-0 flex items-center justify-center text-gray-700 text-6xl opacity-30">📷</div>
+            <div class="scan-line"></div>
+        </div>
+        <p class="text-xl font-bold animate-pulse">AI กำลังอ่านยอดเงิน...</p>
+        <p class="text-xs text-gray-400 mt-2">โปรดรอสักครู่...</p>
+    </div>
+
+    <div id="toast-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 text-center transform scale-100 transition-transform">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 brand-font">บันทึกสำเร็จ!</h3>
+            <p class="text-xs text-gray-400 mt-1">ส่งข้อมูลเข้า Cloud แล้ว</p>
+        </div>
+    </div>
+
+    <div class="max-w-md w-full bg-white sm:rounded-xl shadow-xl overflow-hidden flex flex-col border border-gray-200 no-print min-h-screen sm:min-h-0">
+        
+        <div class="bg-gray-900 text-white p-6 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 accent-bg transition-colors duration-300"></div>
+            <h1 class="text-xl font-medium tracking-wide">PUK-KLONG</h1>
+            <p class="text-xs text-gray-400 uppercase tracking-widest mt-1">Cloud Ledger : Online</p>
+        </div>
+
+        <div class="flex border-b border-gray-200 bg-gray-50">
+            <button onclick="switchTab('record')" id="tab-record" class="flex-1 py-4 text-sm font-bold text-gray-800 border-b-2 accent-border bg-white transition-colors duration-300">บันทึกรายการ</button>
+            <button onclick="switchTab('history')" id="tab-history" class="flex-1 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">รายงาน / ข้อมูล</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto custom-scroll relative">
+            
+            <div id="view-record" class="p-6 space-y-6">
+                <div class="bg-gray-100 p-1.5 rounded-xl flex relative h-14 shadow-inner">
+                    <div id="switch-indicator" class="absolute w-[48%] h-[84%] top-[8%] left-[1.5%] bg-white rounded-lg shadow-sm transition-all duration-300 transform translate-x-0"></div>
+                    <button onclick="setTheme('expense')" class="flex-1 relative z-10 text-sm font-bold transition-colors duration-300 text-gray-800" id="btn-exp">รายจ่าย</button>
+                    <button onclick="setTheme('income')" class="flex-1 relative z-10 text-sm font-medium transition-colors duration-300 text-gray-500" id="btn-inc">รายรับ</button>
+                </div>
+
+                <button onclick="document.getElementById('scan-input').click()" class="w-full bg-gradient-to-r from-slate-700 to-slate-900 text-white py-4 rounded-xl shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
+                    <span class="text-2xl">📸</span> 
+                    <div class="text-left leading-tight">
+                        <span class="block font-bold">สแกนใบเสร็จ (AI)</span>
+                        <span class="block text-[10px] font-light text-gray-300">อ่านยอดเงินอัตโนมัติ (ไม่เก็บรูป)</span>
+                    </div>
+                </button>
+                <input type="file" id="scan-input" accept="image/*" capture="environment" class="hidden" onchange="processReceipt(this)">
+
+                <div class="text-center py-2">
+                    <label class="block text-xs text-gray-400 mb-2 uppercase tracking-wide">จำนวนเงิน (บาท)</label>
+                    <div class="relative inline-block w-full">
+                        <input type="number" id="amount" placeholder="0.00" class="w-full text-center text-4xl font-bold text-gray-800 bg-transparent outline-none placeholder-gray-200 tabular-nums">
+                        <div class="h-0.5 w-1/2 mx-auto mt-2 accent-bg rounded-full opacity-50 transition-colors duration-300"></div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 ml-1">รายละเอียด</label>
+                        <input type="text" id="title" placeholder="ระบุรายการ..." class="w-full mt-1 p-3 border border-gray-200 rounded-lg outline-none bg-gray-50 focus:bg-white transition">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 ml-1">หมวดหมู่</label>
+                            <select id="category" class="w-full mt-1 p-3 border border-gray-200 rounded-lg bg-white outline-none"></select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 ml-1">วัน-เวลา</label>
+                            <input type="text" id="date-display" readonly class="w-full mt-1 p-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 outline-none text-sm text-center">
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="saveEntryToFirestore()" class="w-full accent-bg text-white py-4 rounded-xl font-bold shadow-lg hover:opacity-90 active:scale-[0.98] transition-all text-lg flex justify-center items-center gap-2 mt-4">
+                    บันทึกรายการ
+                </button>
+            </div>
+
+            <div id="view-history" class="hidden bg-gray-50 min-h-full">
+                <div class="bg-white p-6 border-b border-gray-200 shadow-sm">
+                    <div class="flex justify-between items-end mb-4">
+                        <h2 class="text-xl font-bold text-gray-800">สรุปยอด (Real-time)</h2>
+                        <button onclick="window.print()" class="text-xs bg-gray-800 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition flex items-center gap-1">🖨️ พิมพ์</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-3 rounded-lg bg-green-50 border border-green-100">
+                            <p class="text-[10px] text-green-600 font-bold uppercase">Total Income</p>
+                            <p id="dash-inc" class="text-lg font-bold text-green-700 tabular-nums">0.00</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-red-50 border border-red-100">
+                            <p class="text-[10px] text-red-600 font-bold uppercase">Total Expense</p>
+                            <p id="dash-exp" class="text-lg font-bold text-red-700 tabular-nums">0.00</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="ledger-list" class="pb-10 space-y-1">
+                    <p class="text-center text-gray-400 py-10 animate-pulse">กำลังโหลดข้อมูลจาก Cloud...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="print-only w-full max-w-[210mm] mx-auto p-10 bg-white text-black">
+        <div class="flex justify-between items-start mb-8 border-b-2 border-black pb-4">
+            <div><h1 class="text-2xl font-bold uppercase">Financial Report</h1><p class="text-sm mt-1">รายงานสรุปรายรับ-รายจ่าย</p></div>
+            <div class="text-right"><p id="print-biz-name" class="font-bold text-lg">My Business</p><p class="text-xs text-gray-500">Date: <span id="print-now"></span></p></div>
+        </div>
+        <table class="w-full text-sm border-collapse">
+            <thead><tr class="border-b border-black"><th class="py-2 text-left">วัน-เวลา</th><th class="py-2 text-left">รายการ</th><th class="py-2 text-right">รายรับ</th><th class="py-2 text-right">รายจ่าย</th></tr></thead>
+            <tbody id="print-tbody" class="align-top"></tbody>
+            <tfoot><tr class="border-t-2 border-black font-bold"><td colspan="2" class="py-4 text-right pr-4">รวมสุทธิ</td><td id="print-total-inc" class="py-4 text-right text-green-700"></td><td id="print-total-exp" class="py-4 text-right text-red-700"></td></tr></tfoot>
+        </table>
+    </div>
+
+    <script type="module">
+        // Import Firebase จาก CDN
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+
+        // -----------------------------------------------------------
+        // ✅ ค่า Config ของคุณ (puk-klong-ledger)
+        // -----------------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyAaRIIntIwE5uKzblqjhlUzNjArfI-ZBv0",
+            authDomain: "puk-klong-ledger.firebaseapp.com",
+            projectId: "puk-klong-ledger",
+            storageBucket: "puk-klong-ledger.firebasestorage.app",
+            messagingSenderId: "140819836990",
+            appId: "1:140819836990:web:a78790393e71ad82d4e16f"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const dbCollection = collection(db, "transactions");
+
+        // ตัวแปร Global
+        let currentType = 'expense';
+        let transactions = [];
+
+        // Expose Functions to HTML (ให้ปุ่มกดเรียกใช้ได้)
+        window.saveEntryToFirestore = saveEntryToFirestore;
+        window.deleteEntryFromFirestore = deleteEntryFromFirestore;
+        window.setTheme = setTheme;
+        window.switchTab = switchTab;
+        window.processReceipt = processReceipt;
+
+        // --- 1. Real-time Listener (โหลดข้อมูล) ---
+        const q = query(dbCollection, orderBy("timestamp", "desc"));
+        onSnapshot(q, (snapshot) => {
+            transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderHistory(transactions);
+        }, (error) => {
+            console.error("Firebase Error:", error);
+            if(error.code === 'permission-denied') {
+                alert("สิทธิ์การเข้าถึงถูกปฏิเสธ! กรุณาตรวจสอบ Firestore Rules ใน Firebase Console");
+            }
+        });
+
+        // --- 2. Save Function (บันทึกข้อมูล) ---
+        async function saveEntryToFirestore() {
+            const amount = parseFloat(document.getElementById('amount').value);
+            const title = document.getElementById('title').value;
+            
+            if (!amount || !title) return alert('กรุณาระบุ "จำนวนเงิน" และ "รายการ"');
+
+            try {
+                await addDoc(dbCollection, {
+                    timestamp: new Date().toISOString(),
+                    title: title,
+                    amount: amount,
+                    type: currentType,
+                    category: document.getElementById('category').value
+                    // ไม่มีการเก็บรูปภาพ (Image) ตามที่ขอ
+                });
+                
+                showToast();
+                // Reset Form
+                document.getElementById('amount').value = '';
+                document.getElementById('title').value = '';
+
+            } catch (e) {
+                alert("Error adding document: " + e.message);
+            }
+        }
+
+        // --- 3. Delete Function (ลบข้อมูล) ---
+        async function deleteEntryFromFirestore(id) {
+            if(confirm('ยืนยันการลบรายการนี้จาก Cloud?')) {
+                await deleteDoc(doc(db, "transactions", id));
+            }
+        }
+
+        // --- 4. Render History (แสดงผล) ---
+        function renderHistory(data) {
+            const list = document.getElementById('ledger-list');
+            const tbody = document.getElementById('print-tbody');
+            list.innerHTML = '';
+            tbody.innerHTML = '';
+            let tInc = 0, tExp = 0;
+
+            document.getElementById('print-now').innerText = new Date().toLocaleString('th-TH');
+
+            data.forEach(t => {
+                if(t.type === 'income') tInc += t.amount; else tExp += t.amount;
+                
+                const dateObj = new Date(t.timestamp);
+                const dateStr = dateObj.toLocaleDateString('th-TH', {day:'numeric', month:'short'});
+                const timeStr = dateObj.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+
+                // รายการบนมือถือ (Text ล้วน สะอาดตา)
+                const item = document.createElement('div');
+                item.className = "bg-white border-b border-gray-100 last:border-0";
+                item.innerHTML = `
+                    <div class="p-4 flex justify-between items-center hover:bg-gray-50 transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 text-center">
+                                <span class="text-xs font-bold text-gray-400 block">${dateStr}</span>
+                                <span class="text-[10px] text-gray-300">${timeStr}</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-800 text-sm">${t.title}</p>
+                                <p class="text-[10px] text-gray-400">${t.category}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                             <span class="block font-bold text-sm ${t.type==='income'?'text-green-600':'text-red-600'}">
+                                ${t.type==='income'?'+':'-'}${t.amount.toLocaleString()}
+                            </span>
+                            <button onclick="deleteEntryFromFirestore('${t.id}')" class="text-[10px] text-red-300 underline mt-1 hover:text-red-500">ลบ</button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(item);
+
+                // รายการสำหรับ Print
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="py-2 text-gray-500">${dateObj.toLocaleString('th-TH')}</td><td class="py-2">${t.title}</td><td class="py-2 text-right text-green-700">${t.type==='income'?t.amount.toLocaleString():'-'}</td><td class="py-2 text-right text-red-700">${t.type==='expense'?t.amount.toLocaleString():'-'}</td>`;
+                tbody.appendChild(tr);
+            });
+
+            // Update Dashboard
+            document.getElementById('dash-inc').innerText = tInc.toLocaleString();
+            document.getElementById('dash-exp').innerText = tExp.toLocaleString();
+            document.getElementById('print-total-inc').innerText = tInc.toLocaleString();
+            document.getElementById('print-total-exp').innerText = tExp.toLocaleString();
+            
+            if(data.length === 0) list.innerHTML = '<div class="text-center text-gray-300 py-10 text-sm">ยังไม่มีรายการบน Cloud</div>';
+        }
+
+        // --- 5. UI Helpers ---
+        const categories = { expense: ['ต้นทุนสินค้า', 'ค่าใช้จ่ายทั่วไป', 'เงินเดือน', 'อื่นๆ'], income: ['ขายสินค้า', 'บริการ', 'อื่นๆ'] };
+        
+        function setTheme(type) {
+            currentType = type;
+            const body = document.getElementById('main-body');
+            const ind = document.getElementById('switch-indicator');
+            if (type === 'expense') {
+                body.classList.replace('theme-income', 'theme-expense');
+                ind.style.transform = 'translateX(0)';
+                document.getElementById('btn-exp').classList.add('font-bold');
+                document.getElementById('btn-inc').classList.remove('font-bold');
+            } else {
+                body.classList.replace('theme-expense', 'theme-income');
+                ind.style.transform = 'translateX(100%)';
+                document.getElementById('btn-inc').classList.add('font-bold');
+                document.getElementById('btn-exp').classList.remove('font-bold');
+            }
+            updateCats();
+        }
+
+        function updateCats() { document.getElementById('category').innerHTML = categories[currentType].map(c => `<option>${c}</option>`).join(''); }
+        function switchTab(tab) { document.getElementById('view-record').classList.toggle('hidden', tab !== 'record'); document.getElementById('view-history').classList.toggle('hidden', tab !== 'history'); }
+        function showToast() { const t = document.getElementById('toast-overlay'); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
+        
+        // Clock Init
+        setInterval(() => document.getElementById('date-display').value = new Date().toLocaleString('th-TH'), 1000);
+        updateCats();
+
+        // --- 6. AI Scan Logic (อ่านแต่เลข ไม่เก็บรูป) ---
+        async function processReceipt(input) {
+            const file = input.files[0];
+            if (!file) return;
+            document.getElementById('scan-overlay').style.display = 'flex';
+            
+            try {
+                // Tesseract Worker
+                const worker = await Tesseract.createWorker('eng'); // ใช้ English model อ่านตัวเลขดีสุด
+                const ret = await worker.recognize(file);
+                await worker.terminate();
+                const text = ret.data.text;
+                
+                // Regex หาตัวเลขที่มีทศนิยม (Pattern: 100.00, 1,200.50)
+                const prices = text.match(/[0-9]+[.,][0-9]{2}/g);
+                let maxPrice = 0;
+                
+                if(prices) {
+                    // แปลงค่าตัด comma ออก แล้วหาค่ามากสุด
+                    maxPrice = Math.max(...prices.map(p => parseFloat(p.replace(/,/g, ''))));
+                }
+                
+                if(maxPrice > 0) {
+                    document.getElementById('amount').value = maxPrice;
+                    document.getElementById('title').value = "สแกน (Auto)";
+                } else {
+                    alert("ไม่พบยอดเงินที่ชัดเจนในภาพ กรุณากรอกเอง");
+                }
+
+                // *สำคัญ* ไม่มีการ Preview รูป และไม่เก็บลงตัวแปรใดๆ
+
+            } catch(e) { 
+                alert("Scan Error: " + e.message); 
+            } finally { 
+                document.getElementById('scan-overlay').style.display = 'none'; 
+                input.value = ""; // Reset input
+            }
+        }
+    </script>
+</body>
+</html>

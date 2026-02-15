@@ -6,128 +6,101 @@
     <title>Puk-Klong | Multi-User System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&family=Kanit:wght@300;500&display=swap" rel="stylesheet">
-    
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
         h1, h2, h3, .brand-font { font-family: 'Kanit', sans-serif; }
-        
-        /* State Colors */
-        .mode-personal { --primary: #4F46E5; } /* Indigo */
-        .mode-business { --primary: #EA580C; } /* Orange */
-        .mode-admin { --primary: #DC2626; }    /* Red */
-
-        .btn-primary { background-color: var(--primary); color: white; transition: 0.3s; }
-        .btn-primary:hover { opacity: 0.9; }
-        .text-primary { color: var(--primary); }
-        .border-primary { border-color: var(--primary); }
-        
-        /* Login Screen */
-        #auth-screen { display: flex; }
-        #app-screen { display: none; }
         .hidden { display: none !important; }
+        .mode-personal { --theme: #4f46e5; }
+        .mode-business { --theme: #ea580c; }
+        .mode-admin { --theme: #dc2626; }
+        .theme-bg { background-color: var(--theme); }
+        .theme-text { color: var(--theme); }
+        .theme-border { border-color: var(--theme); }
     </style>
 </head>
-<body class="min-h-screen transition-colors duration-500 mode-personal" id="main-body">
+<body class="mode-personal transition-colors duration-300">
 
-    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-100">
+    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-100 p-4">
         <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm border border-gray-200">
-            <div class="text-center mb-6">
-                <h1 class="text-3xl font-bold brand-font text-gray-800">พักกล่อง</h1>
-                <p class="text-sm text-gray-400">ระบบบัญชีออนไลน์ (Multi-User)</p>
-            </div>
+            <h1 class="text-3xl font-bold brand-font text-center text-gray-800 mb-2">พักกล่อง</h1>
+            <p class="text-xs text-center text-gray-400 mb-6">ระบบบัญชีออนไลน์ (Multi-User)</p>
             
-            <div class="space-y-4">
-                <input type="email" id="auth-email" placeholder="อีเมล (Email)" class="w-full p-3 border rounded-lg bg-gray-50 outline-none focus:ring-2 focus:ring-indigo-300">
-                <input type="password" id="auth-pass" placeholder="รหัสผ่าน (Password)" class="w-full p-3 border rounded-lg bg-gray-50 outline-none focus:ring-2 focus:ring-indigo-300">
+            <div class="space-y-3">
+                <input type="email" id="email" placeholder="อีเมล" class="w-full p-3 border rounded bg-gray-50 outline-none focus:ring-2 focus:ring-indigo-300">
+                <input type="password" id="password" placeholder="รหัสผ่าน" class="w-full p-3 border rounded bg-gray-50 outline-none focus:ring-2 focus:ring-indigo-300">
+                <button onclick="doLogin()" class="w-full bg-indigo-600 text-white py-3 rounded font-bold hover:bg-indigo-700 transition">เข้าสู่ระบบด้วย Email</button>
                 
-                <button onclick="handleLogin()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition">เข้าสู่ระบบ (Email)</button>
-                
-                <div class="relative flex py-1 items-center">
-                    <div class="flex-grow border-t border-gray-300"></div>
-                    <span class="flex-shrink-0 mx-4 text-gray-400 text-xs">หรือ</span>
-                    <div class="flex-grow border-t border-gray-300"></div>
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-gray-200"></div>
+                    <span class="flex-shrink-0 mx-4 text-gray-400 text-[10px] uppercase">หรือ</span>
+                    <div class="flex-grow border-t border-gray-200"></div>
                 </div>
 
-                <button onclick="handleGoogleLogin()" class="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-lg font-bold hover:bg-gray-50 transition flex items-center justify-center gap-3">
+                <button onclick="doGoogleLogin()" class="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded font-bold hover:bg-gray-50 transition flex items-center justify-center gap-3">
                     <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" alt="Google">
                     เข้าสู่ระบบด้วย Google
                 </button>
 
-                <button onclick="handleRegister()" class="w-full text-indigo-600 text-sm hover:underline mt-2">ยังไม่มีบัญชี? สมัครด้วยอีเมล</button>
+                <button onclick="doRegister()" class="w-full text-indigo-600 text-xs py-2 hover:underline">ยังไม่มีบัญชี? สมัครสมาชิกใหม่</button>
             </div>
-            <p class="text-[10px] text-center text-gray-400 mt-6">Admin Demo: admin@pukklong.com</p>
         </div>
     </div>
 
-    <div id="app-screen" class="w-full max-w-lg mx-auto bg-white min-h-screen shadow-2xl relative flex-col">
-        
-        <div class="btn-primary p-4 text-white flex justify-between items-center shadow-md">
+    <div id="app-screen" class="hidden w-full max-w-lg mx-auto min-h-screen bg-white shadow-2xl relative flex-col">
+        <div class="theme-bg p-5 text-white flex justify-between items-center shadow-lg transition-colors duration-300">
             <div>
-                <h1 class="text-lg font-bold brand-font" id="app-title">บัญชีส่วนตัว</h1>
-                <p class="text-xs opacity-80" id="user-display">Loading...</p>
+                <h1 id="app-title" class="text-xl font-bold brand-font">ส่วนตัว</h1>
+                <p id="user-email" class="text-xs opacity-80">กำลังโหลด...</p>
             </div>
-            <button onclick="handleLogout()" class="text-xs bg-white/20 px-3 py-1 rounded hover:bg-white/30">ออก</button>
+            <button onclick="doLogout()" class="bg-white/20 px-3 py-1 rounded text-xs hover:bg-white/30 transition">ออก</button>
         </div>
 
-        <div class="flex border-b bg-gray-50 text-sm">
-            <button onclick="switchMode('personal')" id="tab-personal" class="flex-1 py-3 font-bold text-indigo-600 border-b-2 border-indigo-600 bg-white">ส่วนตัว 👤</button>
-            <button onclick="switchMode('business')" id="tab-business" class="flex-1 py-3 text-gray-500 hover:text-gray-700">ธุรกิจร่วม 🤝</button>
-            <button onclick="switchMode('admin')" id="tab-admin" class="hidden flex-1 py-3 text-red-500 hover:text-red-700">Admin 🔑</button>
+        <div class="flex border-b bg-gray-50">
+            <button onclick="setMode('personal')" id="tab-personal" class="flex-1 py-3 text-sm font-bold border-b-2 theme-border theme-text bg-white">👤 ส่วนตัว</button>
+            <button onclick="setMode('business')" id="tab-business" class="flex-1 py-3 text-sm text-gray-500">🤝 ธุรกิจร่วม</button>
+            <button onclick="setMode('admin')" id="tab-admin" class="hidden flex-1 py-3 text-sm text-red-500">🔑 Admin</button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-5 pb-20 custom-scroll">
-            
-            <div id="business-config" class="hidden mb-6 bg-orange-50 p-4 rounded-xl border border-orange-200">
-                <label class="text-xs font-bold text-orange-800 uppercase">🔑 รหัสร้านค้า (Business Code)</label>
+        <div class="flex-1 overflow-y-auto p-4 pb-20">
+            <div id="business-panel" class="hidden mb-4 bg-orange-50 p-4 rounded-xl border border-orange-200">
+                <label class="text-xs font-bold text-orange-800">รหัสร้านค้า (Business Code)</label>
                 <div class="flex gap-2 mt-1">
-                    <input type="text" id="biz-code" placeholder="เช่น SHOP1" class="flex-1 p-2 border border-orange-200 rounded text-center font-bold text-gray-700 uppercase" onchange="loadData()">
-                    <button onclick="loadData()" class="bg-orange-500 text-white px-4 rounded text-xs">เข้าร่วม</button>
+                    <input type="text" id="biz-code" placeholder="เช่น SHOP1" class="flex-1 p-2 border border-orange-200 rounded uppercase font-bold text-center" onchange="loadData()">
+                    <button onclick="loadData()" class="bg-orange-500 text-white px-4 rounded text-xs">ตกลง</button>
                 </div>
-                <p class="text-[10px] text-orange-600 mt-1">* แชร์รหัสนี้ให้เพื่อนเพื่อทำบัญชีร่วมกัน</p>
             </div>
 
-            <div id="admin-config" class="hidden mb-6 bg-red-50 p-4 rounded-xl border border-red-200">
-                <p class="text-center font-bold text-red-800">Administrator Mode</p>
-                <p class="text-xs text-center text-red-600">คุณกำลังดูข้อมูลทั้งหมดในระบบ</p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 mb-6">
+            <div class="grid grid-cols-2 gap-3 mb-4">
                 <div class="bg-green-50 p-3 rounded-xl border border-green-100 text-center">
-                    <p class="text-xs text-green-600">รายรับรวม</p>
-                    <p id="dash-inc" class="text-lg font-bold text-green-700">0</p>
+                    <p class="text-[10px] text-green-600 font-bold">รายรับรวม</p>
+                    <p id="sum-inc" class="text-lg font-bold text-green-700">0</p>
                 </div>
                 <div class="bg-red-50 p-3 rounded-xl border border-red-100 text-center">
-                    <p class="text-xs text-red-600">รายจ่ายรวม</p>
-                    <p id="dash-exp" class="text-lg font-bold text-red-700">0</p>
+                    <p class="text-[10px] text-red-600 font-bold">รายจ่ายรวม</p>
+                    <p id="sum-exp" class="text-lg font-bold text-red-700">0</p>
                 </div>
             </div>
 
-            <div id="input-area" class="space-y-3 mb-6 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                <div class="flex bg-gray-100 rounded-lg p-1">
-                    <button onclick="setTxType('expense')" id="btn-type-exp" class="flex-1 py-2 rounded-md text-sm font-bold bg-white text-red-600 shadow-sm">รายจ่าย</button>
-                    <button onclick="setTxType('income')" id="btn-type-inc" class="flex-1 py-2 rounded-md text-sm text-gray-500">รายรับ</button>
+            <div id="input-form" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-6 space-y-3">
+                <div class="flex bg-gray-100 p-1 rounded">
+                    <button onclick="setType('expense')" id="btn-exp" class="flex-1 py-1 bg-white text-red-600 font-bold rounded shadow-sm text-sm">รายจ่าย</button>
+                    <button onclick="setType('income')" id="btn-inc" class="flex-1 py-1 text-gray-500 text-sm">รายรับ</button>
                 </div>
-                <input type="number" id="amount" placeholder="0.00 ฿" class="w-full text-center text-3xl font-bold py-2 outline-none border-b text-gray-700 placeholder-gray-300">
-                <input type="text" id="title" placeholder="รายการอะไร..." class="w-full p-2 border rounded text-sm bg-gray-50">
-                <button onclick="saveData()" class="w-full btn-primary py-3 rounded-xl font-bold shadow-lg mt-2">บันทึกรายการ</button>
+                <input type="number" id="amount" placeholder="0.00" class="w-full text-center text-3xl font-bold py-2 border-b outline-none">
+                <input type="text" id="title" placeholder="บันทึกรายการ..." class="w-full p-2 bg-gray-50 rounded text-sm">
+                <button onclick="addTx()" class="w-full theme-bg text-white py-3 rounded-xl font-bold shadow-lg">บันทึก</button>
             </div>
 
-            <h3 class="text-sm font-bold text-gray-400 mb-2">รายการล่าสุด</h3>
-            <div id="data-list" class="space-y-2">
-                <p class="text-center text-gray-300 py-10">กำลังโหลด...</p>
-            </div>
+            <h3 class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">รายการล่าสุด</h3>
+            <div id="list" class="space-y-2 pb-10"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
-        // ✅ เพิ่ม GoogleAuthProvider และ signInWithPopup
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
-        // ==============================================
-        // ⚠️ ใส่ Config ของคุณที่นี่
-        // ==============================================
         const firebaseConfig = {
             apiKey: "AIzaSyAaRIIntIwE5uKzblqjhlUzNjArfI-ZBv0",
             authDomain: "puk-klong-ledger.firebaseapp.com",
@@ -138,181 +111,101 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         const auth = getAuth(app);
-        const dbCollection = collection(db, "transactions");
-        // ✅ ประกาศ Provider ของ Google
-        const googleProvider = new GoogleAuthProvider();
+        const db = getFirestore(app);
+        const colRef = collection(db, "transactions");
+        const provider = new GoogleAuthProvider(); // ✅ สร้าง Provider สำหรับ Google
 
-        let currentUser = null;
-        let currentMode = 'personal'; 
-        let currentTxType = 'expense';
+        let user = null;
+        let mode = 'personal'; 
+        let txType = 'expense';
         let unsubscribe = null;
 
-        // AUTH LISTENER
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
+        // --- ✅ ฟังก์ชัน Login ด้วย Google ---
+        window.doGoogleLogin = async () => {
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                alert("เกิดข้อผิดพลาดในการล็อกอินด้วย Google: " + error.message);
+            }
+        };
+
+        onAuthStateChanged(auth, (u) => {
+            if (u) {
+                user = u;
                 document.getElementById('auth-screen').classList.add('hidden');
                 document.getElementById('app-screen').classList.remove('hidden');
                 document.getElementById('app-screen').style.display = 'flex';
-                document.getElementById('user-display').innerText = user.email;
-
-                if (user.email === 'admin@pukklong.com') {
-                    document.getElementById('tab-admin').classList.remove('hidden');
-                } else {
-                    document.getElementById('tab-admin').classList.add('hidden');
-                }
+                document.getElementById('user-email').innerText = u.email;
+                if(u.email === 'admin@pukklong.com') document.getElementById('tab-admin').classList.remove('hidden');
                 loadData();
             } else {
-                currentUser = null;
+                user = null;
                 document.getElementById('auth-screen').classList.remove('hidden');
-                document.getElementById('app-screen').style.display = 'none';
+                document.getElementById('app-screen').classList.add('hidden');
             }
         });
 
-        // ✅ ฟังก์ชัน Login ด้วย Google
-        window.handleGoogleLogin = async () => {
-            try {
-                await signInWithPopup(auth, googleProvider);
-                // ไม่ต้องทำอะไรเพิ่ม onAuthStateChanged จะทำงานเอง
-            } catch (error) {
-                alert("Google Login Error: " + error.message);
-            }
-        };
+        window.doLogin = () => signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value).catch(e => alert(e.message));
+        window.doRegister = () => createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value).then(()=>alert("สมัครสำเร็จ")).catch(e => alert(e.message));
+        window.doLogout = () => signOut(auth);
 
-        window.handleLogin = async () => {
-            const e = document.getElementById('auth-email').value;
-            const p = document.getElementById('auth-pass').value;
-            try { await signInWithEmailAndPassword(auth, e, p); } catch(err) { alert(err.message); }
-        };
-
-        window.handleRegister = async () => {
-            const e = document.getElementById('auth-email').value;
-            const p = document.getElementById('auth-pass').value;
-            try { await createUserWithEmailAndPassword(auth, e, p); alert('สมัครสำเร็จ!'); } catch(err) { alert(err.message); }
-        };
-
-        window.handleLogout = () => signOut(auth);
-
-        // DATA FUNCTIONS
-        window.saveData = async () => {
-            if (!currentUser) return;
-            const amount = parseFloat(document.getElementById('amount').value);
-            const title = document.getElementById('title').value;
-            const bizCode = document.getElementById('biz-code').value.toUpperCase();
-
-            if (!amount || !title) return alert('กรุณากรอกข้อมูลให้ครบ');
-            if (currentMode === 'business' && !bizCode) return alert('กรุณาใส่รหัสร้านค้าก่อน');
-
-            try {
-                await addDoc(dbCollection, {
-                    uid: currentUser.uid,
-                    email: currentUser.email,
-                    timestamp: new Date().toISOString(),
-                    title, amount,
-                    type: currentTxType,
-                    mode: currentMode,
-                    business_code: currentMode === 'business' ? bizCode : null
-                });
-                document.getElementById('amount').value = '';
-                document.getElementById('title').value = '';
-            } catch (e) { alert("Error: " + e.message); }
-        };
-
-        window.loadData = () => {
-            if (!currentUser) return;
-            if (unsubscribe) unsubscribe();
-
-            let q;
-            const bizCode = document.getElementById('biz-code').value.toUpperCase();
-
-            if (currentMode === 'personal') {
-                q = query(dbCollection, where("uid", "==", currentUser.uid), where("mode", "==", "personal"), orderBy("timestamp", "desc"));
-            } else if (currentMode === 'business') {
-                if(!bizCode) { renderList([]); return; }
-                q = query(dbCollection, where("business_code", "==", bizCode), where("mode", "==", "business"), orderBy("timestamp", "desc"));
-            } else if (currentMode === 'admin') {
-                q = query(dbCollection, orderBy("timestamp", "desc"));
-            }
-
-            unsubscribe = onSnapshot(q, (snapshot) => {
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderList(data);
-            }, (error) => console.error(error));
-        };
-
-        window.deleteTx = async (id) => {
-            if(confirm('ลบรายการนี้?')) await deleteDoc(doc(db, "transactions", id));
-        };
-
-        function renderList(data) {
-            const list = document.getElementById('data-list');
-            let tInc = 0, tExp = 0;
-            list.innerHTML = '';
-
-            data.forEach(t => {
-                if(t.type === 'income') tInc += t.amount; else tExp += t.amount;
-                const date = new Date(t.timestamp).toLocaleDateString('th-TH');
-                const isOwner = t.uid === currentUser.uid;
-                
-                let badge = '';
-                if(currentMode === 'business') badge = `<span class="text-[10px] bg-orange-100 text-orange-600 px-1 rounded ml-1">โดย: ${t.email.split('@')[0]}</span>`;
-                if(currentMode === 'admin') badge = `<span class="text-[10px] bg-gray-200 px-1 rounded ml-1">${t.mode} | ${t.email}</span>`;
-
-                list.innerHTML += `
-                    <div class="bg-white border-l-4 ${t.type==='income'?'border-green-500':'border-red-500'} p-3 rounded shadow-sm flex justify-between items-center">
-                        <div>
-                            <div class="flex items-center flex-wrap gap-1">
-                                <span class="font-bold text-gray-700">${t.title}</span>
-                                ${badge}
-                            </div>
-                            <p class="text-xs text-gray-400">${date}</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="block font-bold ${t.type==='income'?'text-green-600':'text-red-600'}">
-                                ${t.type==='income'?'+':'-'}${t.amount.toLocaleString()}
-                            </span>
-                            ${ (isOwner || currentMode === 'admin') ? `<button onclick="deleteTx('${t.id}')" class="text-[10px] text-red-300 underline">ลบ</button>` : '' }
-                        </div>
-                    </div>`;
-            });
-
-            document.getElementById('dash-inc').innerText = tInc.toLocaleString();
-            document.getElementById('dash-exp').innerText = tExp.toLocaleString();
-            if(data.length === 0) list.innerHTML = `<div class="text-center py-10 text-gray-300">ไม่มีรายการ</div>`;
-        }
-
-        // UI SWITCHER
-        window.switchMode = (mode) => {
-            currentMode = mode;
-            const body = document.body;
-            const appTitle = document.getElementById('app-title');
-            
-            document.querySelectorAll('[id^="tab-"]').forEach(el => el.className = "flex-1 py-3 text-gray-500 hover:text-gray-700");
-            document.getElementById(`tab-${mode}`).className = `flex-1 py-3 font-bold border-b-2 bg-white ${mode==='personal'?'text-indigo-600 border-indigo-600':mode==='business'?'text-orange-600 border-orange-600':'text-red-600 border-red-600'}`;
-
-            body.className = `min-h-screen transition-colors duration-500 mode-${mode}`;
-            document.getElementById('business-config').classList.toggle('hidden', mode !== 'business');
-            document.getElementById('admin-config').classList.toggle('hidden', mode !== 'admin');
-            document.getElementById('input-area').classList.toggle('hidden', mode === 'admin');
-
-            if(mode === 'personal') { appTitle.innerText = "บัญชีส่วนตัว"; body.style.setProperty('--primary', '#4F46E5'); }
-            else if(mode === 'business') { appTitle.innerText = "บัญชีธุรกิจ (Shared)"; body.style.setProperty('--primary', '#EA580C'); }
-            else { appTitle.innerText = "ผู้ดูแลระบบ (Admin)"; body.style.setProperty('--primary', '#DC2626'); }
+        // --- (Logic อื่นๆ เหมือนเดิม) ---
+        window.setMode = (m) => {
+            mode = m;
+            document.body.className = `mode-${m} transition-colors duration-300`;
+            document.querySelectorAll('[id^="tab-"]').forEach(el => el.className = "flex-1 py-3 text-sm text-gray-500 cursor-pointer transition");
+            document.getElementById(`tab-${m}`).className = "flex-1 py-3 text-sm font-bold border-b-2 theme-border theme-text bg-white transition";
+            document.getElementById('business-panel').classList.toggle('hidden', m !== 'business');
+            document.getElementById('input-form').classList.toggle('hidden', m === 'admin'); 
+            document.getElementById('app-title').innerText = m === 'personal' ? "ส่วนตัว 👤" : m === 'business' ? "ธุรกิจร่วม 🤝" : "ผู้ดูแลระบบ 🔑";
             loadData();
         };
 
-        window.setTxType = (type) => {
-            currentTxType = type;
-            if(type === 'expense') {
-                document.getElementById('btn-type-exp').className = "flex-1 py-2 rounded-md text-sm font-bold bg-white text-red-600 shadow-sm";
-                document.getElementById('btn-type-inc').className = "flex-1 py-2 rounded-md text-sm text-gray-500";
-            } else {
-                document.getElementById('btn-type-inc').className = "flex-1 py-2 rounded-md text-sm font-bold bg-white text-green-600 shadow-sm";
-                document.getElementById('btn-type-exp').className = "flex-1 py-2 rounded-md text-sm text-gray-500";
-            }
+        window.setType = (t) => {
+            txType = t;
+            document.getElementById('btn-exp').className = t==='expense' ? "flex-1 py-1 bg-white text-red-600 font-bold rounded shadow-sm text-sm" : "flex-1 py-1 text-gray-500 text-sm";
+            document.getElementById('btn-inc').className = t==='income' ? "flex-1 py-1 bg-white text-green-600 font-bold rounded shadow-sm text-sm" : "flex-1 py-1 text-gray-500 text-sm";
         };
+
+        window.addTx = async () => {
+            const amt = parseFloat(document.getElementById('amount').value);
+            const title = document.getElementById('title').value;
+            const bizCode = document.getElementById('biz-code').value.toUpperCase().trim();
+            if(!amt || !title) return alert("กรุณากรอกข้อมูลให้ครบ");
+            try {
+                await addDoc(colRef, { uid: user.uid, email: user.email, timestamp: new Date().toISOString(), amount: amt, title: title, type: txType, mode: mode, business_code: mode === 'business' ? bizCode : null });
+                document.getElementById('amount').value = ''; document.getElementById('title').value = '';
+            } catch(e) { alert(e.message); }
+        };
+
+        window.deleteTx = (id) => confirm("ลบรายการนี้?") && deleteDoc(doc(db, "transactions", id));
+
+        window.loadData = () => {
+            if(!user) return;
+            if(unsubscribe) unsubscribe();
+            let q;
+            const bizCode = document.getElementById('biz-code').value.toUpperCase().trim();
+            if(mode === 'personal') q = query(colRef, where("uid", "==", user.uid), where("mode", "==", "personal"), orderBy("timestamp", "desc"));
+            else if(mode === 'business') { if(!bizCode) { render([]); return; } q = query(colRef, where("business_code", "==", bizCode), where("mode", "==", "business"), orderBy("timestamp", "desc")); }
+            else q = query(colRef, orderBy("timestamp", "desc"));
+
+            unsubscribe = onSnapshot(q, (snapshot) => render(snapshot.docs.map(d => ({id: d.id, ...d.data()}))));
+        };
+
+        function render(data) {
+            const list = document.getElementById('list');
+            list.innerHTML = data.length ? '' : '<p class="text-center text-gray-300 py-10 italic">ไม่มีรายการ</p>';
+            let inc = 0, exp = 0;
+            data.forEach(t => {
+                if(t.type === 'income') inc += t.amount; else exp += t.amount;
+                const date = new Date(t.timestamp).toLocaleDateString('th-TH');
+                const owner = mode !== 'personal' ? `<span class="bg-gray-100 px-1 rounded text-[9px] text-gray-500 ml-2">${t.email.split('@')[0]}</span>` : '';
+                list.innerHTML += `<div class="bg-white p-3 rounded-lg border-l-4 ${t.type==='income'?'border-green-500':'border-red-500'} shadow-sm flex justify-between items-center mb-2"><div><div class="flex items-center"><span class="font-bold text-gray-700">${t.title}</span>${owner}</div><p class="text-[10px] text-gray-400">${date}</p></div><div class="text-right"><span class="block font-bold ${t.type==='income'?'text-green-600':'text-red-600'}">${t.type==='income'?'+':'-'}${t.amount.toLocaleString()}</span>${t.uid === user.uid || mode === 'admin' ? `<button onclick="deleteTx('${t.id}')" class="text-[10px] text-red-300 underline">ลบ</button>` : ''}</div></div>`;
+            });
+            document.getElementById('sum-inc').innerText = inc.toLocaleString();
+            document.getElementById('sum-exp').innerText = exp.toLocaleString();
+        }
     </script>
 </body>
 </html>
